@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Pop Up Block Card</title>
+  <meta charset="utf-8">
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    letegrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="avantui.min.css">
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    letegrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"
+    letegrity="sha384-xrRywqdh3PHs8keKZN+8zzc5TX0GRTLCcmivcbNJWm2rs5C8PRhcEn3czEjhAO9o"
+    crossorigin="anonymous"></script>
+
+  <!-- https://www.avantui.com/ -->
+  <script src="avantui.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+    }
+
+    .box {
+      /* whole area */
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 50px 1fr;
+    }
+
+    .box2 {
+      /* whole area - header */
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+    }
+
+    .wrapper {
+      /* 3D window */
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .menu {
+      margin-left: 30px;
+      margin-right: 30px;
+    }
+
+    .header {
+      text-align: center;
+      font-size: 150%;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #f4f4f4;
+      margin: 5% auto;
+      width: 50%;
+      box-shadow: 0 5px 8px 0 rgba(0, 0, 0, 0.2), 0 7px 20px 0 rgba(0, 0, 0, 0.17);
+      animation-name: modalopen;
+      animation-duration: 1s;
+    }
+
+    @keyframes modalopen {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .modal-header h1 {
+      margin: 1rem 0;
+    }
+
+    .modal-header {
+      background: lightblue;
+      padding: 3px 15px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .modalClose {
+      font-size: 2rem;
+    }
+
+    .modalClose:hover {
+      cursor: poleter;
+    }
+
+    .modal-body {
+      padding: 10px 20px;
+      color: black;
+    }
+  </style>
+</head>
+
+<body onresize="windowResized()">
+  <div class="box">
+    <div name="header" class="header">
+      ポップアップカード設計アプリ&nbsp;&nbsp;&nbsp; Pop Up <i>Block</i> Card Designer&nbsp;&nbsp;<span style="font-size:50%">(by <a
+          href="https://mitani.cs.tsukuba.ac.jp/">Jun
+          Mitani</a>, 2023)</span>
+    </div>
+    <div class="box2">
+      <div class="menu">
+        <input class="btn btn-light btn-sm" type="button" value="English" onclick="buttonPressed('lang_en');" />
+        <input class="btn btn-light btn-sm" type="button" value="日本語" onclick="buttonPressed('lang_jp');" /><br><br><br>
+
+        <label id="labelCursorSize">カーソルサイズ</label>&nbsp;&nbsp;
+        <input class="btn btn-primary btn-sm" type="button" value="x 1/2" onclick="buttonPressed('cursor_size_dec');" />
+        <input class="btn btn-primary btn-sm" type="button" value="x 2"
+          onclick="buttonPressed('cursor_size_inc');" /><br><br>
+
+        <div id="fold_angle">
+          <label id="labelFoldAngle" for="foldAngle">折りの角度</label>&nbsp;&nbsp;
+          <input id="foldAngle" type="range" min="5" max="180" step="5" value="90" oninput="foldAngleChange(this.value)"
+            onchange="foldAngleChange(this.value)">
+          <span id="FoldAngle">90</span><br>
+          <input id="rightAngleButton" class="btn btn-primary btn-sm" type="button" value="直角にする"
+            onclick="buttonPressed('fold_angle_init');" />
+        </div>
+        <br>
+        <div>
+          <input id="undoButton" class="btn btn-primary btn-sm" type="button" value="元に戻す（Ctrl+Z）"
+            onclick="buttonPressed('undo');" />
+          <input id="resetButton" class="btn btn-danger btn-sm" type="button" value="リセット"
+            onclick="buttonPressed('clear');" /><br><br>
+        </div>
+
+        <div class="form-group">
+          <select class="custom-select" id="load_example" onchange="loadExampleData(this.value)">
+            <option id="optionSampleData" value="-1" selected> サンプルデータ </option>
+            <option value="1">01</option>
+            <option value="2">02</option>
+            <option value="3">03</option>
+            <option value="4">04</option>
+            <option value="5">05</option>
+            <option value="6">06</option>
+          </select>
+        </div>
+        <div class="custom-file">
+          <input type="file" class="custom-file-input" id="pop_file" onChange="file_load(this)">
+          <label id="labelOpenFile" class="custom-file-label" for="pop_file"> ファイルを開く </label>
+        </div>
+        <br>
+        <br>
+        <br>
+        <div>
+          <input id="buttonSave" class="btn btn-primary btn-sm" type="button" value="保存"
+            onclick="buttonPressed('save');" />
+          <input id="buttonSVG" class="btn btn-primary btn-sm" type="button" value="展開図データ(.svg)"
+            onclick="buttonPressed('svg');" />
+          <input id="buttonURL" class="btn btn-primary btn-sm" type="button" value="この作品へのリンク取得"
+            onclick="buttonPressed('get_link');" /><br><br>
+        </div>
+
+        <!-- ref https://tcd-theme.com/2021/08/javascript-modalwindow.html -->
+        <button id="modalOpen" class="btn btn-info btn-sm">情報</button>
+        <br><br>
+
+        <img id="key_map" src="img/key_jp.png">
+
+        <div id="easyModal" class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1>About Pop Up <i>Block</i> Card Designer</h1>
+              <span class="modalClose">&times</span>
+            </div>
+            <div class="modal-body">
+              <h2>Information</h2>
+              <ul>
+                <li>This software was developed by <a href="https://mitani.cs.tsukuba.ac.jp/ja/index.html"
+                    target="_blank">Jun Mitani</a>.</li>
+                <li>This software is released under the MIT license on 16 Feb. 2023.</li>
+                <li>The source code is placed on <a href="https://github.com/jun-mitani/popup_card" target="_blank">the
+                    GitHub repository</a>.</li>
+                <li>The algorithm used for generating 3D models is from the following paper:<br><span
+                    style="font-style : italic">Jun Mitani, Hiromasa Suzuki, Hiroshi Uno, "Computer Aided Design for Origamic Architecture Models with Voxel Data Structure",
+                    IPSJ Journal, Vol.44, No.5, pp.1372-1379, 2003.(in Japanese)</span><a
+                    href="http://mitani.cs.tsukuba.ac.jp/dl/IPSJ-JNL4405022.pdf">(PDF)</a>
+                  </it>
+                </li>
+                <li>You are free to use this software for any purpose, including personal use, workshop use, and
+                  commercial product development.
+                  I would be very happy if you respect the developer, cite the software appropriately, and report on
+                  your use cases to mitani@cs.tsukuba.ac.jp</li>
+
+                  <img align=right src="img/jmitani_icon.png">
+              </ul>
+
+              <h3>External Libraries</h2>
+                <ul>
+                  <li> 3D rendering: <a target="_blank" href="https://threejs.org/">three.js</a> </li>
+                  <li> UI and style: <a target="_blank" href="https://jquery.com/">jQuery</a>,
+                    <a target="_blank" href="https://getbootstrap.jp/">Bootstrap</a>,
+                    <a target="_blank" href="https://www.avantui.com/">avantui.js</a>
+                  </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <script>
+          const buttonOpen = document.getElementById('modalOpen');
+          const modal = document.getElementById('easyModal');
+          const buttonClose = document.getElementsByClassName('modalClose')[0];
+
+          // ボタンがクリックされた時
+          buttonOpen.addEventListener('click', function (event) { modal.style.display = 'block'; });
+
+          // バツ印がクリックされた時
+          buttonClose.addEventListener('click', function (event) { modal.style.display = 'none'; });
+
+          // モーダルコンテンツ以外がクリックされた時
+          addEventListener('click', function (event) {
+            if (event.target == modal) { modal.style.display = 'none'; }
+          });
+        </script>
+        <div class="tips">
+          <small>
+            <span id="last_update"></span>
+          </small>
+        </div>
+
+      </div>
+      <div class="wrapper" id="wrapper">
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script src="three.min.js"></script>
+
+  <script>
+    //   document.getElementById('last_update').innerHTML = "Last update Jan 06 2023";
+    let container = document.getElementById("wrapper");
+    container.addEventListener('mousemove', onModelViewMouseMove, false);
+    container.addEventListener('mouseup', onModelViewMouseUp, false);
+    container.addEventListener('mousedown', onModelViewMouseDown, false);
+    container.addEventListener('mousewheel', onModelViewMouseWheel, false);
+
+    // prevent pop-up menu
+    let contextmenu_function = () => { event.preventDefault(); }
+    document.addEventListener('contextmenu', contextmenu_function);
+
+    const FLG_CELL_EXIST = 1;
+    const FLG_CELL_SIDE = 2;
+    const FLG_CELL_BOTTOM = 4;
+    const FLG_CELL_ERROR = 8;
+    const FLG_CELL_CK_UP = 16;
+    const FLG_CELL_CK_DOWN = 32;
+    const FLG_CELL_SAME_AS_LEFT = 64;
+    const FLG_COL_NEED_CALC = 128;
+
+    const EDGE_TYPE_CUT = 0;
+    const EDGE_TYPE_MOUNTAIN = 1;
+    const EDGE_TYPE_VALLEY = 2;
+
+    const FLG_H = 0;
+    const FLG_V = 1;
+
+    const EDIT_MODE_TOP = 0;
+    const EDIT_MODE_SIDE = 1;
+
+    const BACK_COLOR_3D_SCREEN = 0xe0e0e0;
+    const LINE_COLOR = 0x606060;
+    const MAX_UNDO_HISTORY = 100;
+    const MAX_CURSORSIZE = 32;
+    const MATERIAL_LINE = new THREE.LineBasicMaterial({ color: LINE_COLOR, linewidth: 1 });
+    const MATERIAL_CURSOR = new THREE.MeshPhongMaterial({
+      side: THREE.DoubleSide,
+      color: 0x903333,
+      specular: 0x110000,
+      shininess: 0,
+      polygonOffset: true,
+      depthTest: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 0.1
+    });
+    const MATERIAL_FACE = new THREE.MeshPhongMaterial({
+      side: THREE.DoubleSide,
+      color: 0xffffff,
+      specular: 0xffffff,
+      shininess: 0,
+      polygonOffset: true,
+      depthTest: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 0.1
+    });
+
+    let g_editMode = EDIT_MODE_TOP;
+    let g_angle = 90;
+    let g_cursor_x = 1;
+    let g_cursor_y = 1;
+    let g_cursorSize = 4;
+    let g_isDrawCursor = true;
+    let g_preMouseX = 0;
+    let g_preMouseY = 0;
+    let g_rotateY = 0;
+    let g_rotateX = 0.5;
+
+    let g_geometry_card;
+    let g_geometry_lines;
+
+    let g_line_positions;
+    let g_positions;
+    let g_indices;
+    let g_normals;
+    let g_vCount;
+
+    let g_undoHistory = [];
+    let g_voxel = [];
+    let g_cellNum_H;
+    let g_cellNum_W;
+    let g_lang_mode = 'jp';
+
+    let camera, scene, renderer;
+    let group_root, group_cursor, group_card;
+
+    // start
+    init();
+
+    function init() {
+      resetVoxel();
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(50, container.getBoundingClientRect().width / container.getBoundingClientRect().height, 10, 1000);
+      camera.position.set(0, 0, 130);
+      scene.add(camera);
+
+      // light
+      let light = new THREE.PointLight(0xffffff, 1);
+      light.position.set(100, 100, 100);
+      camera.add(light);
+
+      let light2 = new THREE.AmbientLight(0xc0c0c0); // soft white light
+      scene.add(light2);
+
+      group_root = new THREE.Group();
+
+      scene.add(group_root);
+
+      // model
+      let data = window.location.hash.substring(1);
+      if(data) fromString(data);
+
+      buildModel();
+      updateCursor();
+      group_root.rotation.y = g_rotateY;
+      group_root.rotation.x = g_rotateX;
+
+      // renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setClearColor(BACK_COLOR_3D_SCREEN);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(container.getBoundingClientRect().width, container.getBoundingClientRect().height);
+      container.appendChild(renderer.domElement);
+      renderer.render(scene, camera);
+    }
+
+    function foldAngleChange(i) {
+      g_angle = Number(i);
+      document.getElementById("FoldAngle").innerText = i;
+      buildModel();
+      updateCursor();
+      render();
+    }
+
+    function file_loaded(txt) {
+      g_undoHistory = [];
+      resetVoxel();
+      fromString(txt);
+      buildModel();
+      updateCursor();
+      render();
+    }
+
+    function file_load(input) {
+      let f = input.files[0];
+      let reader = new FileReader();
+
+      reader.onload = () => { file_loaded(reader.result); }
+      reader.readAsText(f, 'UTF-8');
+    }
+
+    function loadExampleData(type) {
+      resetVoxel();
+      switch (type) {
+        case '1':
+          fromString('PO0032__**000032__**0804160016__**04081204040016__**04120808040020__**04160412040024__**04200216020028__**0420020030__1616**08200216020028__**04160412040024__**04120808040020__**04081204040016__**0404160016__**040032__**08');
+          break;
+        case '2':
+          fromString('PO0032__**000032__**0816040028__**04160412040024__**04120808040020__**04081204040016__**0404160016__**040032__**0804160016__**04081204040016__**04120808040020__**04160412040024__**0416040028__**040032__**08');
+          break;
+        case '3':
+          fromString('PO0032__**000032__**0812040028__**0212060026__**0212080024__**0212100022__**0212120020__**0212140018__**0212160016__**02141012060016__**02181012080014__**02201012080014__**01201012080014__1604**01221012100012__1604**022603220712100012__**012604220612100012__0404**022603220712100012__**01221012100012__1604**02201012080014__1604**01201012080014__**01181012080014__**02141012060016__**0212160016__**0212140018__**0212120020__**0212100022__**0212080024__**0212060026__**0212040028__**020032__**08');
+          break;
+        case '4':
+          fromString('PO0032__**000032__**06041802020012__**080616040202020012__**020816040202020012__**021016040202020012__**0212160016__**0212160016__0404**0214160016__0404**0214160016__0606**0216160016__0808**0814160016__0606**0214160016__0404**0212160016__0404**0212160016__**021016040202020012__**020816040202020012__**020616040202020012__**02041802020012__**080032__**06');
+          break;
+        case '5':
+          fromString('PO0032__**000032__**0608060026__**0208100022__**0208140018__**0208160016__**0208140018__**0208160016__**0208180014__**02101608040012__**02121608060010__**02161608080008__**02201608100006__**02181608120004__**02161608140002__**02141608120004__**02121608080008__**02101608040012__**0208180014__**0208160016__**0212160016__**0214160016__**0212160016__**0210160016__**0208160016__**0206160016__**0204160016__**0202160016__**020032__**06');
+          break;
+        case '6':
+          fromString('PO0032__**000032__**0408240008__**04122008040008__0404**04161612040012__0808**04201216040016__1212**04240820040020__1616**04280424040024__2020**0428040028__2424**08280424040024__2020**04240820040020__1616**04201216040016__1212**04161612040012__0808**04122008040008__0404**0408240008__**040032__**04');
+          break;
+      }
+
+      g_undoHistory = [];
+      buildModel();
+      updateCursor();
+      render();
+    }
+
+    function push_undoHistory() {
+      g_undoHistory.push(toString());
+
+      if (g_undoHistory.length > MAX_UNDO_HISTORY) {
+        g_undoHistory.shift();
+      }
+    }
+
+    function undo() {
+      if (g_undoHistory.length == 0) return;
+
+      resetVoxel();
+      fromString(g_undoHistory.pop());
+      buildModel();
+      updateCursor();
+      render();
+    }
+
+    function resetModel() {
+      g_undoHistory = [];
+      resetVoxel();
+
+      buildModel();
+      g_cursor_x = 1;
+      g_cursor_y = 1;
+      g_cursorSize = 4;
+      updateCursor();
+      render();
+    }
+
+    function buttonPressed(s) {
+      if (s == 'clear') {
+        resetModel();
+      } else if (s == 'cursor_size_dec') {
+        if (g_cursorSize > 1) {
+          g_cursorSize /= 2;
+          updateCursor();
+          render();
+        }
+      } else if (s == 'cursor_size_inc') {
+        if (g_cursorSize < MAX_CURSORSIZE) {
+          g_cursorSize *= 2;
+          g_cursor_x = 1 + g_cursor_x - g_cursor_x % g_cursorSize;
+          g_cursor_y = 1 + g_cursor_y - g_cursor_y % g_cursorSize;
+          if (g_cursor_y + g_cursorSize > g_cellNum_H - 1) {
+            g_cursor_y -= g_cursorSize;
+          }
+          updateCursor();
+          render();
+        }
+      } else if (s == 'undo') {
+        undo();
+      } else if (s == 'fold_angle_init') {
+        g_angle = 90;
+        document.getElementById("FoldAngle").innerText = 90;
+        buildModel();
+        updateCursor();
+        render();
+      } else if (s == 'svg') {
+        export_data('svg');
+      } else if (s == 'save') {
+        export_data('pop');
+      } else if (s == 'get_link') {
+        navigator.clipboard.writeText(location.href + "#" + toString());        
+        if (g_lang_mode == 'jp') {
+          alert('クリップボードにコピーされました.');
+        } else {
+          alert('The URL linked to this work was copied to the clipboard.');
+        }
+      } else if (s == 'lang_en') {
+        g_lang_mode = 'en';
+        labelCursorSize.innerText = "Cursor Size";
+        labelFoldAngle.innerText = "Fold Angle";
+        rightAngleButton.value = "90 deg";
+        undoButton.value = "Undo (Ctrl+Z)";
+        resetButton.value = "Clear";
+        labelOpenFile.innerText = "File Open";
+        optionSampleData.innerText = "Sample Data";
+        buttonSave.value = "Save";
+        buttonSVG.value = "Get development (SVG)";
+        buttonURL.value = "Link to this work (URL)";
+        modalOpen.innerText = "Info";
+        key_map.src="img/key_en.png";
+      } else if (s == 'lang_jp') {
+        g_lang_mode = 'jp';
+        labelCursorSize.innerText = "カーソルサイズ";
+        labelFoldAngle.innerText = "折りの角度";
+        rightAngleButton.value = "直角にする";
+        undoButton.value = "元に戻す（Ctrl+Z）";
+        resetButton.value = "リセット";
+        labelOpenFile.innerText = " ファイルを開く ";
+        optionSampleData.innerText = " サンプルデータ ";
+        buttonSave.value = "保存";
+        buttonSVG.value = "展開図データ(.svg)";
+        buttonURL.value = "この作品へのリンク取得";
+        modalOpen.innerText = "情報";
+        key_map.src="img/key_jp.png";
+      }
+    }
+
+    function windowResized() {
+      let w = container.getBoundingClientRect().width;
+      let h = container.getBoundingClientRect().height;
+
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      render();
+    }
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key == "ArrowUp") {
+        if (g_editMode == EDIT_MODE_TOP) {
+          g_cursor_y -= g_cursorSize;
+          if (g_cursor_y < 1) {
+            g_cursor_y += g_cursorSize;
+          }
+        } else {
+          g_cursor_y += g_cursorSize;
+          if (g_cursor_y + g_cursorSize > g_cellNum_H - 1) {
+            g_cursor_y -= g_cursorSize;
+          }
+        }
+        updateCursor();
+        render();
+      } else if (event.key == "ArrowDown") {
+        if (g_editMode == EDIT_MODE_TOP) {
+          g_cursor_y += g_cursorSize;
+          if (g_cursor_y + g_cursorSize > g_cellNum_H - 1) {
+            g_cursor_y -= g_cursorSize;
+          }
+        } else {
+          g_cursor_y -= g_cursorSize;
+          if (g_cursor_y < 1) {
+            g_cursor_y += g_cursorSize;
+          }
+        }
+        updateCursor();
+        render();
+      } else if (event.key == "ArrowRight") {
+        g_cursor_x += g_cursorSize;
+        if (g_cursor_x + g_cursorSize > g_cellNum_W - 1) {
+          g_cursor_x -= g_cursorSize;
+        }
+        updateCursor();
+        render();
+      } else if (event.key == "ArrowLeft") {
+        g_cursor_x -= g_cursorSize;
+        if (g_cursor_x < 1) {
+          g_cursor_x += g_cursorSize;
+        }
+        updateCursor();
+        render();
+      } else if (event.key == "1") {
+        push_undoHistory();
+        let bModified = true;
+        if (g_editMode == EDIT_MODE_TOP) {
+          bModified = addBlock(g_cursor_x, g_cursor_y);
+        } else {
+          bModified = makeHole(g_cursor_x, g_cursor_y);
+        }
+
+        postOperationOfCardEdit(bModified);
+
+      } else if (event.key == "3") { // switch edit plane
+        if (g_editMode == EDIT_MODE_TOP) {
+          g_editMode = EDIT_MODE_SIDE;
+        } else {
+          g_editMode = EDIT_MODE_TOP;
+        }
+        updateCursor();
+        render();
+      } else if (event.key == "2") {
+        push_undoHistory();
+
+        let bModified = true;
+        if (g_editMode == EDIT_MODE_TOP) {
+          bModified = delBlock(g_cursor_x, g_cursor_y);
+        } else {
+          bModified = makeHole(g_cursor_x, g_cursor_y);
+        }
+        postOperationOfCardEdit(bModified);
+      } else if (event.key == "z" && event.ctrlKey) {
+        undo();
+      }
+    });
+
+    function postOperationOfCardEdit(bModified) {
+      if(bModified) {
+        for (let dx = 0; dx <= g_cursorSize; dx++) {
+          if (g_cursor_x + dx < g_cellNum_W - 1) {
+            setCellFlg(g_cursor_x + dx, 0, 0, FLG_COL_NEED_CALC, true);
+          }      
+        }
+        buildModel();
+        updateCursor();
+        render();
+      } else {
+        g_undoHistory.pop();
+      }
+    }
+
+    function getIndex(x, y, z) {
+      return x * g_cellNum_H * g_cellNum_H + y * g_cellNum_H + z;
+    }
+
+    function setCellFlg(x, y, z, flg, boo) {
+      if (boo) {//フラグを立てるには、単純な or 演算でOK
+        g_voxel[getIndex(x, y, z)] =
+          g_voxel[getIndex(x, y, z)] | flg;
+      } else {//フラグを消す場合
+        //フラグが立っている場合のみ
+        if (g_voxel[getIndex(x, y, z)] & flg) {
+          g_voxel[getIndex(x, y, z)] =
+            g_voxel[getIndex(x, y, z)] ^ flg;
+        }
+      }
+    }
+
+    function resetVoxel() {
+      g_cellNum_W = 64 + 2;
+      g_cellNum_H = 32 + 2;
+      g_voxel = Array(g_cellNum_W * g_cellNum_H * g_cellNum_H);
+      for (let i = 0; i < g_cellNum_W * g_cellNum_H * g_cellNum_H; i++) {
+        g_voxel[i] = 0;
+      }
+
+      for (let x = 1; x < g_cellNum_W - 1; x++) {
+        setCellFlg(x, 0, 0, FLG_COL_NEED_CALC, true);
+        for (let y = 0; y < g_cellNum_H; y++) {
+          setCellFlg(x, y, 0, FLG_CELL_EXIST, true);
+          setCellFlg(x, 0, y, FLG_CELL_EXIST, true);
+        }
+      }
+    }
+
+    function push_position(arr, x, y, z) {
+      arr.push(x, z, y);
+    }
+
+    function addFace(_x, _y, _z, width, mode) {
+      let angle = g_angle * Math.PI / 180;
+      let x = _x - g_cellNum_W / 2.0;
+      let y = _y + (_z - 1) * Math.cos(angle);
+      let z = (_z - 1) * Math.sin(angle);
+      let dz = Math.sin(angle);
+      let dy = Math.cos(angle);
+
+      if (mode == FLG_H) {//水平面の描画
+        push_position(g_positions, x, y, z);
+        push_position(g_positions, x + width, y, z);
+        push_position(g_positions, x + width, y + 1, z);
+        push_position(g_positions, x, y + 1, z);
+
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+
+        g_indices.push(g_vCount, g_vCount + 2, g_vCount + 1);
+        g_indices.push(g_vCount, g_vCount + 3, g_vCount + 2);
+        g_vCount += 4;
+
+        // 隣接関係を見てチェック
+        if (!(getCell(_x - 1, _y, _z) & FLG_CELL_BOTTOM)) {
+          push_position(g_line_positions, x, y, z);
+          push_position(g_line_positions, x, y + 1, z);
+        }
+        if (!(getCell(_x + width, _y, _z) & FLG_CELL_BOTTOM)) {
+          push_position(g_line_positions, x + width, y, z);
+          push_position(g_line_positions, x + width, y + 1, z);
+        }
+        if (!(getCell(_x, _y + 1, _z) & FLG_CELL_BOTTOM)) {
+          push_position(g_line_positions, x, y + 1, z);
+          push_position(g_line_positions, x + width, y + 1, z);
+        }
+        if (!(getCell(_x, _y - 1, _z) & FLG_CELL_BOTTOM)) {
+          push_position(g_line_positions, x, y, z);
+          push_position(g_line_positions, x + width, y, z);
+        }
+
+      } else if (mode == FLG_V) { //垂直面の描画
+        let normal_y = Math.sin(angle);
+        let normal_z = -Math.cos(angle);
+
+        push_position(g_positions, x, y, z);
+        push_position(g_positions, x + width, y, z);
+        push_position(g_positions, x + width, y + dy, z + dz);
+        push_position(g_positions, x, y + dy, z + dz);
+        g_normals.push(0, normal_z, normal_y);
+        g_normals.push(0, normal_z, normal_y);
+        g_normals.push(0, normal_z, normal_y);
+        g_normals.push(0, normal_z, normal_y);
+
+        g_indices.push(g_vCount, g_vCount + 1, g_vCount + 2);
+        g_indices.push(g_vCount, g_vCount + 2, g_vCount + 3);
+        g_vCount += 4;
+
+        if (!(getCell(_x - 1, _y, _z) & FLG_CELL_SIDE)) {
+          push_position(g_line_positions, x, y, z);
+          push_position(g_line_positions, x, y + dy, z + dz);
+        }
+        if (!(getCell(_x + width, _y, _z) & FLG_CELL_SIDE)) {
+          push_position(g_line_positions, x + width, y, z);
+          push_position(g_line_positions, x + width, y + dy, z + dz);
+        }
+        if (!(getCell(_x, _y, _z + 1) & FLG_CELL_SIDE)) {
+          push_position(g_line_positions, x, y + dy, z + dz);
+          push_position(g_line_positions, x + width, y + dy, z + dz);
+        }
+        if (!(getCell(_x, _y, _z - 1) & FLG_CELL_SIDE)) {
+          push_position(g_line_positions, x, y, z);
+          push_position(g_line_positions, x + width, y, z);
+        }
+      }
+    }
+
+    function getCell(x, y, z) {
+      return g_voxel[getIndex(x, y, z)];
+    }
+
+    function getBlockHeight(x, y) {
+      for (let z = g_cellNum_H - 1; z >= 0; z--) {
+        if (getCell(x, y, z) & FLG_CELL_EXIST) {
+          return z;
+        }
+      }
+      return 0;
+    }
+
+    function getBlockDepth(x, z) {
+      for (let y = g_cellNum_H - 1; y >= 0; y--) {
+        if (getCell(x, y, z) & FLG_CELL_EXIST) {
+          return y;
+        }
+      }
+      return 0;
+    }
+
+    function calcCellWall(x) {
+      for (let y = g_cellNum_H - 1; y > 0; y--) {
+        for (let z = 0; z < g_cellNum_H; z++) {
+          setCellFlg(x, y, z, FLG_CELL_SIDE, false);
+          setCellFlg(x, y, z, FLG_CELL_BOTTOM, false);
+        }
+      }
+
+      if (x <= 1) {
+        setCellFlg(x, 0, 0, FLG_CELL_SAME_AS_LEFT, false);
+      } else {
+        setCellFlg(x, 0, 0, FLG_CELL_SAME_AS_LEFT, true);
+      }
+
+      if (x == g_cellNum_W - 1) {
+        return;
+      }
+
+      let preHeight = 1;
+      for (let y = g_cellNum_H - 1; y > 0; y--) {
+        let block_height = getBlockHeight(x, y);
+
+        if (x > 1 && getBlockHeight(x, y) != getBlockHeight(x - 1, y)) {
+          setCellFlg(x, 0, 0, FLG_CELL_SAME_AS_LEFT, false);
+        }
+
+        //上面の記録
+        setCellFlg(x, y, block_height + 1, FLG_CELL_BOTTOM, true);
+
+        //段差があるときの処理
+        if (preHeight < block_height) {
+          let kurinukiHeight = preHeight + 1;
+
+          for (let z = preHeight + 1; z <= block_height; z++) {
+            if (x > 1 && (getCell(x, 1, z) & FLG_CELL_EXIST) != (getCell(x - 1, 1, z) & FLG_CELL_EXIST)) {
+              setCellFlg(x, 0, 0, FLG_CELL_SAME_AS_LEFT, false);
+            }
+
+            //垂直な面
+            if (getCell(x, 1, z) & FLG_CELL_EXIST) {//くりぬきではない場合
+              kurinukiHeight = z + 1;//くりぬきの場合のチェック用
+              //縦面の記録
+              setCellFlg(x, y + 1, z, FLG_CELL_SIDE, true);
+
+            } else {//くりぬきの場合
+              //横面の描画を記録
+              if (y - (z - kurinukiHeight) > 0) {
+                setCellFlg(x, y - (z - kurinukiHeight), kurinukiHeight, FLG_CELL_BOTTOM, true);
+              }
+              else {//くりぬき分が裏へ飛び出したときの処理
+                setCellFlg(x, 1, -y + z, FLG_CELL_SIDE, true);
+              }
+            }
+          }
+        }
+        preHeight = block_height;
+      }
+
+      //背面の描画記録(マージン部分を含む)
+      for (let tz = getBlockHeight(x, 1) + 1; tz < g_cellNum_H; tz++) {
+        setCellFlg(x, 1, tz, FLG_CELL_SIDE, true);
+      }
+    }
+
+    function buildCard() {
+      g_geometry_card = new THREE.BufferGeometry();
+      g_geometry_lines = new THREE.BufferGeometry();
+      g_positions = [];
+      g_indices = [];
+      g_normals = [];
+      g_vCount = 0;
+      g_line_positions = [];
+
+      for (let x = 1; x < g_cellNum_W - 1; x++) {
+        if (getCell(x, 0, 0) & FLG_COL_NEED_CALC) {
+          calcCellWall(x);
+        }
+        setCellFlg(x, 0, 0, FLG_COL_NEED_CALC, false);
+      }
+
+      for (let x = 1; x < g_cellNum_W;) {//各列について走査
+        //一度にまとめて描く横幅
+        let width = 1;
+
+        //まとめて描ける横幅を求める
+        for (let tmpX = x + 1; tmpX < g_cellNum_W; tmpX++) {
+          if (getCell(tmpX, 0, 0) & FLG_CELL_SAME_AS_LEFT) {
+            width++;
+          } else {
+            break;
+          }
+        }
+
+        for (let y = 0; y < g_cellNum_H; y++) {
+          for (let z = 0; z < g_cellNum_H; z++) {
+            if (getCell(x, y, z) & FLG_CELL_SIDE) {
+              addFace(x, y, z, width, FLG_V);
+            }
+          }
+        }
+
+        // 横面
+        for (let y = 0; y < g_cellNum_H; y++) {
+          for (let z = 0; z < g_cellNum_H; z++) {
+            if (getCell(x, y, z) & FLG_CELL_BOTTOM) {
+              addFace(x, y, z, width, FLG_H);
+            }
+          }
+        }
+
+        x += width;
+      }
+      g_geometry_card.setIndex(g_indices);
+      g_geometry_card.setAttribute('position', new THREE.Float32BufferAttribute(g_positions, 3));
+      g_geometry_card.setAttribute('normal', new THREE.Float32BufferAttribute(g_normals, 3));
+
+      g_geometry_lines.setAttribute('position', new THREE.Float32BufferAttribute(g_line_positions, 3));
+    }
+
+    //カーソルが大きいときはカバーする範囲の一番高いところを返す
+    function getCursorHeight(x, y) {
+      let height = -1;
+      for (let dx = 0; dx < g_cursorSize; dx++) {
+        for (let dy = 0; dy < g_cursorSize; dy++) {
+          let _height = getBlockHeight(x + dx, y + dy);
+          if (height < _height) {
+            height = _height;
+          }
+        }
+      }
+      return height;
+    }
+
+    //カーソルが大きいときはカバーする範囲の一番手前を返す
+    function getCursorDepth(x, z) {
+      let depth = -1;
+      for (let dx = 0; dx < g_cursorSize; dx++) {
+        for (let dz = 0; dz < g_cursorSize; dz++) {
+          let _depth = getBlockDepth(x + dx, z + dz);
+          if (depth < _depth) {
+            depth = _depth;
+          }
+        }
+      }
+      return depth;
+    }
+
+    function updateCursor() {
+      if (group_cursor != null) { group_root.remove(group_cursor); }
+      group_cursor = new THREE.Group();
+      group_root.add(group_cursor);
+
+      let angle = g_angle * Math.PI / 180;
+
+      let space = 0.02;
+
+      let cursor_geometry = new THREE.BufferGeometry();
+      g_positions = [];
+      g_normals = [];
+      g_indices = [];
+      let indices = [];
+
+      if (g_editMode == EDIT_MODE_TOP) {
+        //カーソルの描画
+        let height = getCursorHeight(g_cursor_x, g_cursor_y);
+        let _y = g_cursor_y + (height) * Math.cos(angle);
+        let _z = (height) * Math.sin(angle) - 1;
+        let _x = g_cursor_x - g_cellNum_W / 2;
+
+        push_position(g_positions, _x, _y, _z + 1 + space);
+        push_position(g_positions, _x + g_cursorSize, _y, _z + 1 + space);
+        push_position(g_positions, _x + g_cursorSize, _y + g_cursorSize, _z + 1 + space);
+        push_position(g_positions, _x, _y + g_cursorSize, _z + 1 + space);
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+        g_normals.push(0, 1, 0);
+        g_indices.push(0, 2, 1);
+        g_indices.push(0, 3, 2);
+
+        cursor_geometry.setIndex(g_indices);
+        cursor_geometry.setAttribute('position', new THREE.Float32BufferAttribute(g_positions, 3));
+        cursor_geometry.setAttribute('normal', new THREE.Float32BufferAttribute(g_normals, 3));
+
+        group_cursor.add(new THREE.Mesh(cursor_geometry, MATERIAL_CURSOR));
+
+      } else {
+        //カーソルの描画
+        let depth = getCursorDepth(g_cursor_x, g_cursor_y);
+        if (depth == 0) {
+          for (let z = g_cursor_y + g_cursorSize; z + g_cursorSize < g_cellNum_H - 1; z += g_cursorSize) {//z++){	
+            depth = getCursorDepth(g_cursor_x, z);
+            if (depth != 0) {
+              break;
+            }
+          }
+        }
+
+        let _y = depth + (g_cursor_y - 1) * Math.cos(angle);
+        let _z = (g_cursor_y - 1) * Math.sin(angle);
+        let dz = g_cursorSize * Math.sin(angle);
+        let dy = g_cursorSize * Math.cos(angle);
+        let _x = g_cursor_x - g_cellNum_W / 2;
+
+        push_position(g_positions, _x, _y + 1 + space, _z);
+        push_position(g_positions, _x + g_cursorSize, _y + 1 + space, _z);
+        push_position(g_positions, _x + g_cursorSize, _y + 1 + space + dy, _z + dz);
+        push_position(g_positions, _x, _y + 1 + space + dy, _z + dz);
+        g_normals.push(0, 0, 1);
+        g_normals.push(0, 0, 1);
+        g_normals.push(0, 0, 1);
+        g_normals.push(0, 0, 1);
+        g_indices.push(0, 1, 2);
+        g_indices.push(0, 2, 3);
+
+        cursor_geometry.setIndex(g_indices);
+        cursor_geometry.setAttribute('position', new THREE.Float32BufferAttribute(g_positions, 3));
+        cursor_geometry.setAttribute('normal', new THREE.Float32BufferAttribute(g_normals, 3));
+
+        group_cursor.add(new THREE.Mesh(cursor_geometry, MATERIAL_CURSOR));
+      }
+    }
+
+    function buildModel() {
+      if (group_card != null) {
+        group_root.remove(group_card);
+      }
+
+      group_card = new THREE.Group();
+      group_root.add(group_card);
+
+      buildCard();
+
+      group_card.add(new THREE.Mesh(g_geometry_card, MATERIAL_FACE));
+      group_card.add(new THREE.LineSegments(g_geometry_lines, MATERIAL_LINE));
+    }
+
+    function onModelViewMouseDown(e) {
+      let rect = container.getBoundingClientRect();
+      if (e.which == 1 || e.which == 3) {
+        g_preMouseX = e.clientX - rect.left;
+        g_preMouseY = e.clientY - rect.top;
+      }
+    }
+
+    function onModelViewMouseMove(e) {
+      if (e.which == 1 || e.which == 3) {
+        let rect = container.getBoundingClientRect();
+        let px = e.clientX - rect.left;
+        let py = e.clientY - rect.top;
+
+        g_rotateY += (px - g_preMouseX) * 0.01;
+        g_rotateX += (py - g_preMouseY) * 0.01;
+
+        group_root.rotation.y = g_rotateY;
+        group_root.rotation.x = g_rotateX;
+
+        render();
+        g_preMouseX = px;
+        g_preMouseY = py;
+      }
+    }
+
+    function onModelViewMouseUp(e) {
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+    }
+
+    function onModelViewMouseWheel(e) {
+      let delta = e.deltaY ? -(e.deltaY) : e.wheelDelta ? e.wheelDelta : -(e.detail);
+      camera.position.z += delta / 10;
+      render();
+      e.preventDefault();
+    }
+
+    function export_data(ext) {
+      let content = "";
+      let filename = "pop-up." + ext;
+
+      switch (ext) {
+        case 'svg':
+          content = getSVG(getPatternEdges());
+          break;
+        case 'pop':
+          content = toString();
+          break;
+        default:
+          return;
+      }
+
+      let blob = new Blob([content], { "type": "text/plain" });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      a.download = filename;
+      a.href = url;
+      a.click();
+      a.remove();
+      console.log(url);
+      window.URL.revokeObjectURL(url);
+    }
+
+    function getSVG(edges) {
+      const scale = 15;
+      const w = (g_cellNum_W + 2) * scale;
+      const h = (g_cellNum_W + 4) * scale;
+
+      let txt =
+        `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+xmlns="http://www.w3.org/2000/svg"
+xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+width="${w}"
+height="${h}"
+viewBox="${0} ${0} ${w} ${h}"
+version="1.1"
+id="svg1"
+>
+<g inkscape:groupmode="layer" id="Lines" inkscape:label="Lines">
+`;
+
+      for (let i = 0; i < edges.length; i++) {
+        let sx = edges[i].sx * scale;
+        let sy = (edges[i].sy + 1) * scale + h / 2;
+        let ex = edges[i].ex * scale;
+        let ey = (edges[i].ey + 1) * scale + h / 2;
+
+        let col = "";
+        switch (edges[i].type) {
+          case EDGE_TYPE_CUT: col = "0, 0, 0"; break;
+          case EDGE_TYPE_MOUNTAIN: col = "255, 0, 0"; break;
+          case EDGE_TYPE_VALLEY: col = "0, 0, 255"; break;
+        }
+
+        txt += `<path 
+style="stroke:rgb(${col});stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" 
+fill="none" 
+id="path${i}" 
+d="M ${sx} ${sy} L ${ex} ${ey} "/>
+`;
+      }
+
+      txt += `</g></svg>`;
+
+      return txt;
+    }
+
+    function addBlock(x, y) {
+      let height = getCursorHeight(x, y);
+
+      if (height + g_cursorSize <= g_cellNum_H - 2) {
+        for (let dx = 0; dx < g_cursorSize; dx++) {
+          for (let dz = 0; dz < g_cursorSize; dz++) {//上に１ブロック分追加
+            for (let ty = 0; ty < y + g_cursorSize; ty++) {
+              setCellFlg(x + dx, ty, height + 1 + dz, FLG_CELL_EXIST, true);
+            }
+          }
+          for (let dz = 0; dz < height + 1; dz++) {//下についてもくりぬき以外はブロック追加
+            if (getCell(x + dx, 1, dz) & FLG_CELL_EXIST) {
+              for (let ty = 0; ty < y + g_cursorSize; ty++) {
+                setCellFlg(x + dx, ty, dz, FLG_CELL_EXIST, true);
+              }
+            }
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    function makeHole(x, y) {
+      if (getCursorDepth(x, y) > 0) {//ブロックがある場合はくりぬき実行
+        for (let dx = 0; dx < g_cursorSize; dx++) {
+          for (let dz = 0; dz < g_cursorSize; dz++) {
+            for (let ty = 1; ty < g_cellNum_H - 1; ty++) {
+              setCellFlg(x + dx, ty, y + dz, FLG_CELL_EXIST, false);
+            }
+          }
+        }
+
+        return true;
+      } else {//ブロックがない場合は穴埋め
+        //どこまで穴埋めするかを求める
+        let depth = 0;
+        for (let z = y + g_cursorSize; z + g_cursorSize < g_cellNum_H - 1; z += g_cursorSize) {
+          depth = getCursorDepth(x, z);
+          if (depth != 0) break;
+        }
+
+        if (depth != 0) {
+          for (let dx = 0; dx < g_cursorSize; dx++) {
+            for (let dz = 0; dz < g_cursorSize; dz++) {
+              for (let ty = 1; ty <= depth; ty++) {
+                setCellFlg(x + dx, ty, y + dz, FLG_CELL_EXIST, true);
+              }
+            }
+          }
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function delBlock(x, y) {
+      let height = getCursorHeight(x, y);
+
+      if(height == 0) return false;
+
+      let bModified = false;
+      for (let dx = 0; dx < g_cursorSize; dx++) {
+        for (let dz = 0; dz < g_cursorSize; dz++) {
+          if (height - dz > 0) {
+            for (let ty = y; ty < g_cellNum_H; ty++) {
+              g_voxel[getIndex(x + dx, ty, height - dz)] = 0;
+              bModified = true;
+            }
+          }
+        }
+      }
+      return bModified;
+    }
+
+    function fromString(str) {
+      if (str.substr(0, 2) != 'PO') {
+        console.log("invalid data");
+        return;
+      }
+
+      resetVoxel();
+      let data = [];
+
+      for (let i = 2; i < str.length; i += 2) {
+        data.push(str.substr(i, 2));
+      }
+
+      let tx = 0;
+      let curY = 0;
+      let bHoleInfo = false;
+      for (let i = 0; i < data.length; i += 2) {
+        let d0 = data[i];
+        let d1 = data[i + 1];
+
+        if (d0 == '**') {
+          let repeat_x_num = Number(d1);
+
+          for (let dx = 1; dx < repeat_x_num; dx++) {
+            for (let y = 0; y < g_cellNum_H; y++) {
+              for (let z = 0; z < g_cellNum_H; z++) {
+                g_voxel[getIndex(tx + 1 + dx, y, z)] = g_voxel[getIndex(tx + 1, y, z)];
+              }
+            }
+          }
+          tx += repeat_x_num;
+          curY = 0;
+          bHoleInfo = false;
+        } else if (d0 == '__') {
+          bHoleInfo = true;
+          i--;
+        } else {
+          if (bHoleInfo) {
+            let tz = Number(d0);
+            let repeat_num = Number(d1);
+            for (let dz = 0; dz < repeat_num; dz++) {
+              for (let ty = 1; ty < g_cellNum_H - 1; ty++) {
+                setCellFlg(tx + 1, ty, tz - dz, FLG_CELL_EXIST, false);
+              }
+            }
+          } else {
+            let height = Number(d0);
+            let repeat_num = Number(d1);
+
+            for (let ty = curY; ty < curY + repeat_num; ty++) {
+              for (let h = 0; h < height; h++) {
+                setCellFlg(tx + 1, ty + 1, h + 1, FLG_CELL_EXIST, true);
+              }
+            }
+            curY += repeat_num;
+          }
+        }
+      }
+
+      for (let x = 1; x < g_cellNum_W - 1; x++) {
+        setCellFlg(x, 0, 0, FLG_COL_NEED_CALC, true);
+      }
+    }
+
+    function toString() {
+      let str = "PO";
+      let pre_x_data = "";
+      let preHeight = -1;
+      let x_continue_count = 1;
+
+      let x_arr = [1];
+      for (let x = 1; x < g_cellNum_W - 1; x++) {
+/*        let bSame = true;
+        for (let y = 1; y < g_cellNum_H; y++) {
+          for (let z = 1; z < g_cellNum_H; z++) {
+            if ((getCell(x, y, z) & FLG_CELL_EXIST) != (getCell(x - 1, y, z) & FLG_CELL_EXIST)) {
+              bSame = false;
+              break;
+            }
+          }
+          if (!bSame) break;
+        }
+        */
+        let bSame = getCell(x,0,0) & FLG_CELL_SAME_AS_LEFT;
+        if (!bSame) {
+          x_arr.push(x);
+        }
+      }
+
+      x_arr.push(g_cellNum_W - 1);
+
+      for (let i = 0; i < x_arr.length - 1; i++) {
+        let tx = x_arr[i];
+        x_continue_count = x_arr[i + 1] - tx;
+
+        let x_data = "";
+        preHeight = getBlockHeight(tx, 1);
+        x_data += preHeight.toString().padStart(2, '0');
+        let y_continue_count = 1;
+
+        for (let ty = 2; ty < g_cellNum_H - 1; ty++) {
+          let height = getBlockHeight(tx, ty);
+          if (height != preHeight) {
+            x_data += y_continue_count.toString().padStart(2, '0') + height.toString().padStart(2, '0');
+            y_continue_count = 0;
+          }
+          y_continue_count++;
+          preHeight = height;
+        }
+
+        x_data += y_continue_count.toString().padStart(2, '0');
+        x_data += '__';
+
+        height = getBlockHeight(tx, 1);
+        for (let tz = height; tz > 0; tz--) {
+          if (!(getCell(tx, 1, tz) & FLG_CELL_EXIST)) {
+            x_data += tz.toString().padStart(2, '0');
+            let z_continue_count = 1;
+            for (ttz = tz - 1; ttz > 0; ttz--) {
+              if (!(getCell(tx, 1, ttz) & FLG_CELL_EXIST)) {
+                z_continue_count++;
+              } else {
+                break;
+              }
+            }
+            x_data += z_continue_count.toString().padStart(2, '0');
+            tz -= z_continue_count - 1;
+          }
+        }
+
+        str += x_data + "**" + x_continue_count.toString().padStart(2, '0');
+      }
+      return str;
+    }
+
+    class Edge2D {
+      sx;
+      sy;
+      ex;
+      ey;
+      type;
+
+      constructor(sx, sy, ex, ey, type) {
+        this.sx = sx;
+        this.sy = sy;
+        this.ex = ex;
+        this.ey = ey;
+        this.type = type;
+      }
+    }
+
+    function getPatternEdges() {
+      let edges = [];
+      for (let x = 1; x < g_cellNum_W;) {//各列について走査
+        //高速化のために、隣と同じものはまとめて一度に書いてしまう。その横幅
+        let width = 1;
+
+        for (let tmpX = x + 1; tmpX < g_cellNum_W; tmpX++) {
+          if (getCell(tmpX, 0, 0) & FLG_CELL_SAME_AS_LEFT) {
+            width++;
+          } else {
+            break;
+          }
+        }
+
+        let y;
+        //実際の描画(上面サイドのエッジ)
+        for (y = 0; y < g_cellNum_H; y++) {
+          for (let z = 0; z < g_cellNum_H; z++) {
+            if (((getCell(x - 1, y, z) & FLG_CELL_SIDE) && !(getCell(x, y, z) & FLG_CELL_SIDE)) ||
+              (!(getCell(x - 1, y, z) & FLG_CELL_SIDE) && (getCell(x, y, z) & FLG_CELL_SIDE))) {
+
+              // 一番端の台紙部分は出力しない
+              if (x == 1 && y == 1) continue;
+              if (x == g_cellNum_W - 1 && y == 1) continue;
+
+              edges.push(new Edge2D(x, y - z, x, y - z - 1, EDGE_TYPE_CUT));
+            }
+          }
+        }
+
+        //実際の描画(横面サイドのエッジ)
+        for (y = 0; y < g_cellNum_H; y++) {
+          for (let z = 0; z < g_cellNum_H; z++) {
+            if (((getCell(x - 1, y, z) & FLG_CELL_BOTTOM) && !(getCell(x, y, z) & FLG_CELL_BOTTOM)) ||
+              (!(getCell(x - 1, y, z) & FLG_CELL_BOTTOM) && (getCell(x, y, z) & FLG_CELL_BOTTOM))) {
+
+              // 一番端の台紙部分は出力しない
+              if (x == 1 && z == 1) continue;
+              if (x == g_cellNum_W - 1 && z == 1) continue;
+
+              edges.push(new Edge2D(x, y - z + 1, x, y - z, EDGE_TYPE_CUT));
+            }
+          }
+        }
+
+        //実際の描画(縦面による折れ線のエッジ)
+        let edgeType;
+        for (y = 1; y < g_cellNum_H; y++) {
+          for (let z = 1; z < g_cellNum_H; z++) {
+            if ((getCell(x, y, z) & FLG_CELL_SIDE) && !(getCell(x, y, z - 1) & FLG_CELL_SIDE)) {
+              if (getCell(x, y, z) & FLG_CELL_BOTTOM) {
+                edgeType = EDGE_TYPE_VALLEY;
+              } else {
+                edgeType = EDGE_TYPE_CUT;
+              }
+              edges.push(new Edge2D(x, y - z, x + width, y - z, edgeType));
+
+            } else if (!(getCell(x, y, z) & FLG_CELL_SIDE) && (getCell(x, y, z - 1) & FLG_CELL_SIDE)) {
+              if (getCell(x, y - 1, z) & FLG_CELL_BOTTOM) {
+                edgeType = EDGE_TYPE_MOUNTAIN;
+              } else {
+                edgeType = EDGE_TYPE_CUT;
+              }
+              edges.push(new Edge2D(x, y - z, x + width, y - z, edgeType));
+            }
+          }
+        }
+        x += width;
+      }
+
+      edges.push(new Edge2D(1, g_cellNum_H - 1, g_cellNum_W - 1, g_cellNum_H - 1, EDGE_TYPE_CUT));
+      edges.push(new Edge2D(1, -g_cellNum_H + 1, g_cellNum_W - 1, -g_cellNum_H + 1, EDGE_TYPE_CUT));
+      edges.push(new Edge2D(1, g_cellNum_H - 1, g_cellNum_W - 1, g_cellNum_H - 1, EDGE_TYPE_CUT));
+      edges.push(new Edge2D(1, g_cellNum_H - 1, 1, -g_cellNum_H + 1, EDGE_TYPE_CUT));
+      edges.push(new Edge2D(g_cellNum_W - 1, g_cellNum_H - 1, g_cellNum_W - 1, -g_cellNum_H + 1, EDGE_TYPE_CUT));
+
+      return edges;
+    }    
+  </script>
+</body>
+
+</html>
