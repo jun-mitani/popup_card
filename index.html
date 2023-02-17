@@ -233,7 +233,8 @@
         </script>
         <div class="tips">
           <small>
-            <span id="last_update"></span>
+            <span id="last_update"></span><br>
+            First release Feb. 16 2023
           </small>
         </div>
 
@@ -247,7 +248,7 @@
   <script src="three.min.js"></script>
 
   <script>
-    //   document.getElementById('last_update').innerHTML = "Last update Jan 06 2023";
+    document.getElementById('last_update').innerHTML = "Last update Feb. 17 2023";
     let container = document.getElementById("wrapper");
     container.addEventListener('mousemove', onModelViewMouseMove, false);
     container.addEventListener('mouseup', onModelViewMouseUp, false);
@@ -1004,16 +1005,28 @@
       group_card.add(new THREE.LineSegments(g_geometry_lines, MATERIAL_LINE));
     }
 
+    // for firefox
+    let bLeftMousePressed = false;
+    let bRightMousePressed = false;
+
     function onModelViewMouseDown(e) {
       let rect = container.getBoundingClientRect();
       if (e.which == 1 || e.which == 3) {
         g_preMouseX = e.clientX - rect.left;
         g_preMouseY = e.clientY - rect.top;
       }
+
+      if(e.which == 1) {
+        bLeftMousePressed = true;
+      } else if (e.which == 3) {
+        bRightMousePressed = true;
+      }
+      e.preventDefault();
     }
 
     function onModelViewMouseMove(e) {
-      if (e.which == 1 || e.which == 3) {
+//      if (e.which == 1 || e.which == 3) {
+      if(bLeftMousePressed || bRightMousePressed) {
         let rect = container.getBoundingClientRect();
         let px = e.clientX - rect.left;
         let py = e.clientY - rect.top;
@@ -1028,9 +1041,12 @@
         g_preMouseX = px;
         g_preMouseY = py;
       }
+      e.preventDefault();
     }
 
     function onModelViewMouseUp(e) {
+      bLeftMousePressed = false;
+      bRightMousePressed = false;
     }
 
     function render() {
